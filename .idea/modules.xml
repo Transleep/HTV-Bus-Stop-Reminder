@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/HTVBusStopReminder.iml" filepath="$PROJECT_DIR$/HTVBusStopReminder.iml" />
+      <module fileurl="file://$PROJECT_DIR$/HTV-Bus-Stop-Reminder.iml" filepath="$PROJECT_DIR$/HTV-Bus-Stop-Reminder.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>
