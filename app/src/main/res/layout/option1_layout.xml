@@ -1,44 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/topLinearLayout"
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
-              android:id="@+id/topLinearLayout"
               android:alpha="1.0"
               android:background="@android:color/background_light"
               android:orientation="vertical"
-              android:weightSum="1"
-              android:padding="10dp">
+              android:padding="10dp"
+              android:weightSum="1">
+
     <TextView
         android:id="@+id/textView2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
+        android:focusable="false"
         android:fontFamily="monospace"
-        android:paddingBottom="15dp"
-        android:paddingTop="15dp"
         android:text="Destination Stop Number"
         android:textColor="@color/black"
-        android:textSize="10pt"
-        android:paddingLeft="10dp"
-        android:focusable="false"/>
+        android:textSize="10pt"/>
 
-    <EditText
-        android:id="@+id/editTextLocInput"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Stop #"
-        android:textColor="@color/black"
-        android:textColorHint="@color/grey"
-        android:textSize="10pt"
-        android:paddingLeft="10dp"/>
+        android:orientation="horizontal"
+        android:layout_weight="1.0"
+        >
+
+        <EditText
+            android:id="@+id/editTextLocInput"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="Stop #"
+            android:textColor="@color/black"
+            android:textColorHint="@color/grey"
+            android:textSize="10pt"
+            android:layout_weight="0.7"/>
+
+        <Button
+            android:id="@+id/btnOKOpt1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="OK"
+            />
+
+    </LinearLayout>
+
 
     <TextView
         android:id="@+id/textView3"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingLeft="10dp"
         android:text="Enter where you&apos;d like to stop"
         android:textAppearance="?android:attr/textAppearanceSmall"
         android:textColor="@color/black"
-        android:textSize="8pt"
-        android:paddingLeft="10dp"/>
+        android:textSize="8pt"/>
 </LinearLayout>

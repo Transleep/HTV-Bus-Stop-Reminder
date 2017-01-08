@@ -71,6 +71,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 	Button prevButton;
 	Button nextButton;
 
+	private Button btnOkOpt1;
+	private Button btnOKOpt2;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -118,13 +121,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 	void replaceView(int viewNum) {
 
-		if(viewNum <= 1){
+		if (viewNum <= 1) {
 			prevButton.setEnabled(false);
 			nextButton.setEnabled(true);
-		}else if(viewNum >=2){
+		} else if (viewNum >= 2) {
 			prevButton.setEnabled(true);
 			nextButton.setEnabled(false);
-		}else{
+		} else {
 			prevButton.setEnabled(true);
 			nextButton.setEnabled(true);
 		}
@@ -138,7 +141,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 			C = getLayoutInflater().inflate(R.layout.option1_layout, parent, false);
 			parent.addView(C, index);
 
+			btnOkOpt1 = (Button) findViewById(R.id.btnOKOpt1);
 			etLocInput = (EditText) findViewById(R.id.editTextLocInput);
+
+
+			btnOkOpt1.setOnClickListener(new View.OnClickListener() {
+
+				@Override
+				public void onClick(View v) {
+					confirmLoc();
+				}
+			});
+
 			etLocInput.setOnKeyListener(new View.OnKeyListener() {
 				@Override
 				public boolean onKey(View v, int keyCode, KeyEvent event) {
@@ -147,16 +161,86 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 							(keyCode == KeyEvent.KEYCODE_ENTER)) {
 						// Perform action on key press
 						// when user presses enter on etLocInput
-						try {
+							confirmLoc();
+							return true;
+						}
+						return false;
+					}
+				}
 
-							String input = etLocInput.getText().toString();
-							ServerResponse response = new ServerCaller().execute("/stop_location?stop_code=" + input).get();
+				);
+			}else if (viewNum == 2) {
+				C = getLayoutInflater().inflate(R.layout.option2_layout, parent, false);
+				parent.addView(C, index);
 
+				etRouteInput = (EditText) findViewById(R.id.editTextRouteInput);
+				btnOKOpt2 = (Button) findViewById(R.id.btnOKOpt2);
+				btnOKOpt2.setOnClickListener(new View.OnClickListener() {
+					@Override
+					public void onClick(View v) {
+						confirmRoute();
+					}
+				});
+
+				spinner = (Spinner) findViewById(R.id.spinner);
+
+				etRouteInput.setOnKeyListener(new View.OnKeyListener() {
+					@Override
+					public boolean onKey(View v, int keyCode, KeyEvent event) {
+						// If the event is a key-down event on the "enter" button
+						if ((event.getAction() == KeyEvent.ACTION_DOWN) &&
+								(keyCode == KeyEvent.KEYCODE_ENTER)) {
+							// Perform action on key press
+							// when user presses enter on etLocInput
+							confirmRoute();
+							return true;
+						}
+						return false;
+					}
+				});
+			}
+		}
+
+	private void confirmRoute(){
+		try {
+			String input = etRouteInput.getText().toString();
+			ServerResponse response = new ServerCaller().execute("/stops?route=" + input).get();
 			/*
 			Log.i("resp code", response.getRespCode());
 			Log.i("resp data", response.getData());
 			Log.i("resp message", response.getMessage());*/
+			Log.i("Transit Route", "Response code=" + response.getRespCode());
+			if (response.getRespCode().equals("0")) {
+				//status is OK
+				//{"message": "OK", "code": 0, "data": [["KENNEDY ARRIVE", "13398"], ["MCCOWAN ARRIVE", "13502"], ["MCCOWAN STATION - WESTBOUND PLATFORM", "14541"], ["SCARBOROUGH CENTRE STATION - WESTBOUND PLATFORM", "14542"], ["MIDLAND STATION - WESTBOUND PLATFORM", "14543"], ["ELLESMERE STATION - SOUTHBOUND PLATFORM", "14544"], ["LAWRENCE EAST STATION - SOUTHBOUND PLATFORM", "14545"], ["KENNEDY STATION - PLATFORM", "14546"], ["KENNEDY STATION - NORTHBOUND PLATFORM", "14547"], ["LAWRENCE EAST STATION - NORTHBOUND PLATFORM", "14548"], ["ELLESMERE STATION - NORTHBOUND PLATFORM", "14549"], ["MIDLAND STATION - EASTBOUND PLATFORM", "14550"], ["SCARBOROUGH CENTRE STATION - EASTBOUND PLATFORM", "14551"], ["MCCOWAN STATION - PLATFORM", "14552"]]}
+				JSONArray arrOfPairs = response.getData();
 
+				transitStopID = new String[arrOfPairs.length()];
+				transitStopName = new String[arrOfPairs.length()];
+
+				List<String> spinnerTransitStopNames = new ArrayList<String>();
+				for (int i = 0; i < arrOfPairs.length(); i++) {
+					transitStopName[i] = arrOfPairs.getJSONArray(i).getString(0);
+					spinnerTransitStopNames.add(transitStopName[i]);
+					Log.i("Spinner", "transit stop name=" + transitStopName[i]);
+					transitStopID[i] = arrOfPairs.getJSONArray(i).getString(1);
+				}
+				ArrayAdapter<String> adapter = new ArrayAdapter<String>(thisContext, android.R.layout.simple_spinner_item, spinnerTransitStopNames);
+				adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+				spinner.setAdapter(adapter);
+				spinner.setBackgroundColor(getResources().getColor(R.color.black));
+				spinner.setSelection(0);
+
+				spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+					@Override
+					public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+						try {
+
+							Log.i("transitStopID", transitStopID[position]);
+							ServerResponse response = new ServerCaller().execute("/stop_location?stop_code=" + transitStopID[position]).get();
+
+							Log.i("resp", response.getMessage());
 							if (response.getRespCode().equals("0")) {
 								//status is OK
 								//get the location
@@ -165,14 +249,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 								LatLng destination = new LatLng(latitude, longitude);
 								targetLoc = destination;
-								if(targetLocMarker == null) {
+								if (targetLocMarker == null) {
 									targetLocMarker = mMap.addMarker(new MarkerOptions().position(destination).title("Your Destination"));
-								}else{
+								} else {
 									targetLocMarker.setPosition(targetLoc);
 								}
 								mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(destination, 15));
-							} else {
-								//server error
 							}
 						} catch (InterruptedException e) {
 							e.printStackTrace();
@@ -181,111 +263,58 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 						} catch (JSONException e) {
 							e.printStackTrace();
 						}
-						return true;
 					}
-					return false;
-				}
-			});
-		} else if (viewNum == 2) {
-			C = getLayoutInflater().inflate(R.layout.option2_layout, parent, false);
-			parent.addView(C, index);
 
-			etRouteInput = (EditText) findViewById(R.id.editTextRouteInput);
+					@Override
+					public void onNothingSelected(AdapterView<?> parent) {
 
-			spinner = (Spinner) findViewById(R.id.spinner);
+					}
+				});
+			} else {
+				//server error
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+	}
 
-			etRouteInput.setOnKeyListener(new View.OnKeyListener() {
-				@Override
-				public boolean onKey(View v, int keyCode, KeyEvent event) {
-					// If the event is a key-down event on the "enter" button
-					if ((event.getAction() == KeyEvent.ACTION_DOWN) &&
-							(keyCode == KeyEvent.KEYCODE_ENTER)) {
-						// Perform action on key press
-						// when user presses enter on etLocInput
-						try {
+	private void confirmLoc() {
+		try {
+			String input = etLocInput.getText().toString();
+			ServerResponse response = new ServerCaller().execute("/stop_location?stop_code=" + input).get();
 
-							String input = etRouteInput.getText().toString();
-							ServerResponse response = new ServerCaller().execute("/stops?route=" + input).get();
 			/*
 			Log.i("resp code", response.getRespCode());
 			Log.i("resp data", response.getData());
 			Log.i("resp message", response.getMessage());*/
-							Log.i("Transit Route", "Response code="+response.getRespCode());
-							if (response.getRespCode().equals("0")) {
-								//status is OK
-								//{"message": "OK", "code": 0, "data": [["KENNEDY ARRIVE", "13398"], ["MCCOWAN ARRIVE", "13502"], ["MCCOWAN STATION - WESTBOUND PLATFORM", "14541"], ["SCARBOROUGH CENTRE STATION - WESTBOUND PLATFORM", "14542"], ["MIDLAND STATION - WESTBOUND PLATFORM", "14543"], ["ELLESMERE STATION - SOUTHBOUND PLATFORM", "14544"], ["LAWRENCE EAST STATION - SOUTHBOUND PLATFORM", "14545"], ["KENNEDY STATION - PLATFORM", "14546"], ["KENNEDY STATION - NORTHBOUND PLATFORM", "14547"], ["LAWRENCE EAST STATION - NORTHBOUND PLATFORM", "14548"], ["ELLESMERE STATION - NORTHBOUND PLATFORM", "14549"], ["MIDLAND STATION - EASTBOUND PLATFORM", "14550"], ["SCARBOROUGH CENTRE STATION - EASTBOUND PLATFORM", "14551"], ["MCCOWAN STATION - PLATFORM", "14552"]]}
-								JSONArray arrOfPairs = response.getData();
 
-								transitStopID = new String[arrOfPairs.length()];
-								transitStopName = new String[arrOfPairs.length()];
+			if (response.getRespCode().equals("0")) {
+				//status is OK
+				//get the location
+				double latitude = Double.parseDouble(response.getData().getString(0));
+				double longitude = Double.parseDouble(response.getData().getString(1));
 
-								List<String> spinnerTransitStopNames = new ArrayList<String>();
-								for(int i=0; i<arrOfPairs.length(); i++){
-									transitStopName[i] = arrOfPairs.getJSONArray(i).getString(0);
-									spinnerTransitStopNames.add(transitStopName[i]);
-									Log.i("Spinner", "transit stop name="+transitStopName[i]);
-									transitStopID[i] = arrOfPairs.getJSONArray(i).getString(1);
-								}
-								ArrayAdapter<String> adapter = new ArrayAdapter<String>(thisContext, android.R.layout.simple_spinner_item, spinnerTransitStopNames);
-								adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-
-								spinner.setAdapter(adapter);
-								spinner.setBackgroundColor(getResources().getColor(R.color.black));
-								spinner.setSelection(0);
-
-								spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-									@Override
-									public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-										try {
-
-											Log.i("transitStopID", transitStopID[position]);
-											ServerResponse response = new ServerCaller().execute("/stop_location?stop_code=" + transitStopID[position]).get();
-
-											Log.i("resp", response.getMessage());
-											if(response.getRespCode().equals("0")){
-												//status is OK
-												//get the location
-												double latitude = Double.parseDouble(response.getData().getString(0));
-												double longitude = Double.parseDouble(response.getData().getString(1));
-
-												LatLng destination = new LatLng(latitude, longitude);
-												targetLoc = destination;
-												if(targetLocMarker == null) {
-													targetLocMarker = mMap.addMarker(new MarkerOptions().position(destination).title("Your Destination"));
-												}else{
-													targetLocMarker.setPosition(targetLoc);
-												}
-												mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(destination, 15));
-											}
-										} catch (InterruptedException e) {
-											e.printStackTrace();
-										} catch (ExecutionException e) {
-											e.printStackTrace();
-										} catch (JSONException e) {
-											e.printStackTrace();
-										}
-									}
-
-									@Override
-									public void onNothingSelected(AdapterView<?> parent) {
-
-									}
-								});
-							} else {
-								//server error
-							}
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						} catch (ExecutionException e) {
-							e.printStackTrace();
-						} catch (JSONException e) {
-							e.printStackTrace();
-						}
-						return true;
-					}
-					return false;
+				LatLng destination = new LatLng(latitude, longitude);
+				targetLoc = destination;
+				if (targetLocMarker == null) {
+					targetLocMarker = mMap.addMarker(new MarkerOptions().position(destination).title("Your Destination"));
+				} else {
+					targetLocMarker.setPosition(targetLoc);
 				}
-			});
+				mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(destination, 15));
+			} else {
+				//server error
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		} catch (JSONException e) {
+			e.printStackTrace();
 		}
 	}
 
