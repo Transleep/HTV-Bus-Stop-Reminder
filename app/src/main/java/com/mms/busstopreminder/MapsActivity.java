@@ -13,6 +13,9 @@ import android.graphics.Point;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
@@ -354,6 +357,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 					.getNotification();
 			NotificationManager nManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 			nManager.notify(1, notification);
+
+			try {
+				Uri notificationURI = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+				Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notificationURI);
+				r.play();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 
 			Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 

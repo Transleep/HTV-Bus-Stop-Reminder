@@ -6,7 +6,8 @@
               android:alpha="1.0"
               android:background="@color/white"
               android:orientation="vertical"
-              android:weightSum="1">
+              android:weightSum="1"
+                android:padding="10dp">
 
     <TextView
         android:id="@+id/textView4"
@@ -16,9 +17,11 @@
         android:fontFamily="monospace"
         android:paddingBottom="15dp"
         android:paddingTop="15dp"
-        android:text="By Route"
+
         android:textColor="@color/black"
-        android:textSize="10pt"/>
+        android:paddingLeft="10dp"
+        android:textSize="10pt"
+        android:text="By Route"/>
 
     <EditText
         android:id="@+id/editTextRouteInput"

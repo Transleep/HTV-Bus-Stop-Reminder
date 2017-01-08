@@ -28,6 +28,7 @@
         android:layout_height="wrap_content"
         android:hint="Stop #"
         android:textColor="@color/black"
+        android:textColorHint="@color/grey"
         android:textSize="10pt"
         android:paddingLeft="10dp"/>
 
