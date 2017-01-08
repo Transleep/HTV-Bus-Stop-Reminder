@@ -28,7 +28,8 @@ public class ServerCaller extends AsyncTask<String, Void, ServerResponse> {
 		String buffer = "";
 		try {
 			String urlBase = "http://htv-bn.ml";
-			String reqStr = "/stop_location?stop_code="+params[0];
+			//String reqStr = "/stop_location?stop_code="+params[0];
+			String reqStr = params[0];
 
 			url = new URL(urlBase+reqStr);
 

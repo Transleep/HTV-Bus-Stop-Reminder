@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/topLinearLayout"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:alpha="1.0"
+              android:background="@color/white"
+              android:orientation="vertical"
+              android:weightSum="1">
+
+    <EditText
+        android:id="@+id/editTextRouteInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Route #"
+        android:textColor="@color/black"
+        android:textColorHint="@color/grey"/>
+
+    <Spinner
+        android:id="@+id/spinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+</LinearLayout>

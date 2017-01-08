@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:id="@+id/topLinearLayout"
+              android:alpha="1.0"
+              android:background="@color/white"
+              android:orientation="vertical"
+              android:weightSum="1">
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:fontFamily="monospace"
+        android:paddingBottom="15dp"
+        android:paddingTop="15dp"
+        android:text="Stop:"
+        android:textColor="@color/black"
+        android:textSize="16pt"/>
+
+    <EditText
+        android:id="@+id/editTextLocInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="enter in stuff"
+        android:textColor="@color/black"
+        android:textColorHint="@color/grey"/>
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Enter where you&apos;d like to stop"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textColor="@color/black"/>
+</LinearLayout>

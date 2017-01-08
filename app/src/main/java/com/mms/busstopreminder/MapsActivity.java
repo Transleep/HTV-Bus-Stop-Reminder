@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -20,12 +21,15 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
+import android.os.Vibrator;
+import android.widget.Spinner;
 
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -33,36 +37,48 @@ import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.util.ConcurrentModificationException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, View.OnKeyListener, LocationListener {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener {
 
 	private GoogleMap mMap;
 	private EditText etLocInput;
+	private EditText etRouteInput;
+	private Spinner spinner;
+	Context thisContext = this;
+	String[] transitStopName;
+	String[] transitStopID;
 	private LocationManager mLocationManager;
 	Marker currLocMarker = null;
 	Marker targetLocMarker = null;
 	LatLng targetLoc = null;
 
+	int currItem = 1;
+
+	Button prevButton;
+	Button nextButton;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_maps);
+		replaceView(currItem);
 		// Obtain the SupportMapFragment and get notified when the map is ready to be used.
 		SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
 				.findFragmentById(R.id.map);
 		mapFragment.getMapAsync(this);
 
-		etLocInput = (EditText) findViewById(R.id.editTextLocInput);
-		etLocInput.setOnKeyListener(this);
+
+		addButtonListeners();
 
 		mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -77,6 +93,146 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 			return;
 		}
 		mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, (long) 1000, (float) 50.0, this);
+	}
+
+	void addButtonListeners() {
+		prevButton = (Button) findViewById(R.id.btnPrev);
+		prevButton.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				replaceView(--currItem);
+			}
+		});
+		nextButton = (Button) findViewById(R.id.btnNext);
+		nextButton.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				replaceView(++currItem);
+			}
+		});
+	}
+
+	void replaceView(int viewNum) {
+		View C = findViewById(R.id.topLinearLayout);
+		ViewGroup parent = (ViewGroup) C.getParent();
+		int index = parent.indexOfChild(C);
+		parent.removeView(C);
+
+		if (viewNum == 1) {
+			C = getLayoutInflater().inflate(R.layout.option1_layout, parent, false);
+			parent.addView(C, index);
+
+			etLocInput = (EditText) findViewById(R.id.editTextLocInput);
+			etLocInput.setOnKeyListener(new View.OnKeyListener() {
+				@Override
+				public boolean onKey(View v, int keyCode, KeyEvent event) {
+					// If the event is a key-down event on the "enter" button
+					if ((event.getAction() == KeyEvent.ACTION_DOWN) &&
+							(keyCode == KeyEvent.KEYCODE_ENTER)) {
+						// Perform action on key press
+						// when user presses enter on etLocInput
+						try {
+
+							String input = etLocInput.getText().toString();
+							ServerResponse response = new ServerCaller().execute("/stop_location?stop_code=" + input).get();
+
+			/*
+			Log.i("resp code", response.getRespCode());
+			Log.i("resp data", response.getData());
+			Log.i("resp message", response.getMessage());*/
+
+							if (response.getRespCode().equals("0")) {
+								//status is OK
+								//get the location
+								double latitude = Double.parseDouble(response.getData().getString(0));
+								double longitude = Double.parseDouble(response.getData().getString(1));
+
+								LatLng destination = new LatLng(latitude, longitude);
+								targetLoc = destination;
+								targetLocMarker = mMap.addMarker(new MarkerOptions().position(destination).title("Your Destination"));
+								mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(destination, 15));
+							} else {
+								//server error
+							}
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						} catch (ExecutionException e) {
+							e.printStackTrace();
+						} catch (JSONException e) {
+							e.printStackTrace();
+						}
+						return true;
+					}
+					return false;
+				}
+			});
+		} else if (viewNum == 2) {
+			C = getLayoutInflater().inflate(R.layout.option2_layout, parent, false);
+			parent.addView(C, index);
+
+			etRouteInput = (EditText) findViewById(R.id.editTextRouteInput);
+
+			spinner = (Spinner) findViewById(R.id.spinner);
+
+			etRouteInput.setOnKeyListener(new View.OnKeyListener() {
+				@Override
+				public boolean onKey(View v, int keyCode, KeyEvent event) {
+					// If the event is a key-down event on the "enter" button
+					if ((event.getAction() == KeyEvent.ACTION_DOWN) &&
+							(keyCode == KeyEvent.KEYCODE_ENTER)) {
+						// Perform action on key press
+						// when user presses enter on etLocInput
+						try {
+
+							String input = etRouteInput.getText().toString();
+							ServerResponse response = new ServerCaller().execute("/stops?route=" + input).get();
+			/*
+			Log.i("resp code", response.getRespCode());
+			Log.i("resp data", response.getData());
+			Log.i("resp message", response.getMessage());*/
+							Log.i("Transit Route", "Response code="+response.getRespCode());
+							if (response.getRespCode().equals("0")) {
+								//status is OK
+								//{"message": "OK", "code": 0, "data": [["KENNEDY ARRIVE", "13398"], ["MCCOWAN ARRIVE", "13502"], ["MCCOWAN STATION - WESTBOUND PLATFORM", "14541"], ["SCARBOROUGH CENTRE STATION - WESTBOUND PLATFORM", "14542"], ["MIDLAND STATION - WESTBOUND PLATFORM", "14543"], ["ELLESMERE STATION - SOUTHBOUND PLATFORM", "14544"], ["LAWRENCE EAST STATION - SOUTHBOUND PLATFORM", "14545"], ["KENNEDY STATION - PLATFORM", "14546"], ["KENNEDY STATION - NORTHBOUND PLATFORM", "14547"], ["LAWRENCE EAST STATION - NORTHBOUND PLATFORM", "14548"], ["ELLESMERE STATION - NORTHBOUND PLATFORM", "14549"], ["MIDLAND STATION - EASTBOUND PLATFORM", "14550"], ["SCARBOROUGH CENTRE STATION - EASTBOUND PLATFORM", "14551"], ["MCCOWAN STATION - PLATFORM", "14552"]]}
+								JSONArray arrOfPairs = response.getData();
+
+								transitStopID = new String[arrOfPairs.length()];
+								transitStopName = new String[arrOfPairs.length()];
+
+								List<String> spinnerTransitStopNames = new ArrayList<String>();
+								for(int i=0; i<arrOfPairs.length(); i++){
+									transitStopName[i] = arrOfPairs.getJSONArray(i).getString(0);
+									spinnerTransitStopNames.add(transitStopName[i]);
+									Log.i("Spinner", "transit stop name="+transitStopName[i]);
+									transitStopID[i] = arrOfPairs.getJSONArray(i).getString(1);
+								}
+								ArrayAdapter<String> adapter = new ArrayAdapter<String>(thisContext, android.R.layout.simple_spinner_item, spinnerTransitStopNames);
+								adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+								spinner.setAdapter(adapter);
+								spinner.setBackgroundColor(getResources().getColor(R.color.black));
+								spinner.setSelection(0);
+
+
+								
+							} else {
+								//server error
+							}
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						} catch (ExecutionException e) {
+							e.printStackTrace();
+						} catch (JSONException e) {
+							e.printStackTrace();
+						}
+						return true;
+					}
+					return false;
+				}
+			});
+		}
 	}
 
 	/**
@@ -117,50 +273,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 		//mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(toronto, 17));
 	}
 
-	@Override
-	public boolean onKey(View v, int keyCode, KeyEvent event) {
-		// If the event is a key-down event on the "enter" button
-		if ((event.getAction() == KeyEvent.ACTION_DOWN) &&
-				(keyCode == KeyEvent.KEYCODE_ENTER)) {
-			// Perform action on key press
-			// when user presses enter on etLocInput
-			try {
-
-				String input = etLocInput.getText().toString();
-				ServerResponse response = new ServerCaller().execute(input).get();
-
-			/*
-			Log.i("resp code", response.getRespCode());
-			Log.i("resp data", response.getData());
-			Log.i("resp message", response.getMessage());*/
-
-				if (response.getRespCode().equals("0")) {
-					//status is OK
-					//get the location
-					double latitude = Double.parseDouble(response.getData().getString(0));
-					double longitude = Double.parseDouble(response.getData().getString(1));
-
-					LatLng destination = new LatLng(latitude, longitude);
-					targetLoc = destination;
-					targetLocMarker = mMap.addMarker(new MarkerOptions().position(destination).title("Your Destination"));
-					mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(destination, 15));
-				} else {
-					//server error
-				}
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			} catch (ExecutionException e) {
-				e.printStackTrace();
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-			return true;
-		}
-		return false;
-	}
-
-	public Bitmap resizeMapIcons(String iconName,int width, int height){
-		Bitmap imageBitmap = BitmapFactory.decodeResource(getResources(),getResources().getIdentifier(iconName, "drawable", getPackageName()));
+	public Bitmap resizeMapIcons(String iconName, int width, int height) {
+		Bitmap imageBitmap = BitmapFactory.decodeResource(getResources(), getResources().getIdentifier(iconName, "drawable", getPackageName()));
 		Bitmap resizedBitmap = Bitmap.createScaledBitmap(imageBitmap, width, height, false);
 		return resizedBitmap;
 	}
@@ -172,12 +286,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 		double longitude = location.getLongitude();
 
 		LatLng currLoc = new LatLng(latitude, longitude);
-		Log.i("LocationService", "[location changed] Lat="+latitude+"; Long="+longitude);
-		Log.i("Location", "currLoc="+currLoc.toString()+"; targetLoc="+targetLoc);
-		Log.i("Location", "deltaLoc="+deltaLoc(currLoc, targetLoc));
+		Log.i("LocationService", "[location changed] Lat=" + latitude + "; Long=" + longitude);
+		Log.i("Location", "currLoc=" + currLoc.toString() + "; targetLoc=" + targetLoc);
+		Log.i("Location", "deltaLoc=" + deltaLoc(currLoc, targetLoc));
 
 		float deltaLoc = deltaLoc(currLoc, targetLoc);
-		if(deltaLoc <= 1000.0){
+		if (deltaLoc <= 2000.0) {
 			Intent intent = new Intent(getApplicationContext(), MapsActivity.class);
 			PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 1, intent, 0);
 			Notification notification = new Notification.Builder(getApplicationContext())
@@ -189,20 +303,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 					.getNotification();
 			NotificationManager nManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 			nManager.notify(1, notification);
+
+			Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+
+			v.vibrate(10000);
 		}
 
 
 		//mMap.addMarker(new MarkerOptions().position(currLoc).title("You're here!"));
-		if(currLocMarker == null) {
+		if (currLocMarker == null) {
 			currLocMarker = mMap.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromBitmap(resizeMapIcons("currlocmarker", 50, 50))).title("You're here!").position(currLoc));
-		}else{
+		} else {
 			//animateMarker(currLocMarker, currLoc, false);
 			currLocMarker.setPosition(currLoc);
 		}
 		mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currLoc, 15));
 	}
 
-	public float deltaLoc(LatLng currLoc, LatLng targetLoc){
+	public float deltaLoc(LatLng currLoc, LatLng targetLoc) {
 		Location curr = new Location("");
 		curr.setLatitude(currLoc.latitude);
 		curr.setLongitude(currLoc.longitude);
