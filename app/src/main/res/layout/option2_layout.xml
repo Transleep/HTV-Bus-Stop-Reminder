@@ -15,10 +15,10 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:fontFamily="monospace"
-        android:paddingBottom="15dp"
+
         android:paddingLeft="10dp"
 
-        android:paddingTop="15dp"
+
         android:text="By Route"
         android:textColor="@color/black"
         android:textSize="10pt"/>
@@ -28,6 +28,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1.0"
         android:orientation="horizontal"
+        android:padding="10dp"
         >
 
         <EditText
