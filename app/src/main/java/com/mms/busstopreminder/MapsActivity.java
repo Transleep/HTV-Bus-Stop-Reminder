@@ -24,6 +24,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -71,14 +72,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_maps);
+		addButtonListeners();
 		replaceView(currItem);
 		// Obtain the SupportMapFragment and get notified when the map is ready to be used.
 		SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
 				.findFragmentById(R.id.map);
 		mapFragment.getMapAsync(this);
-
-
-		addButtonListeners();
 
 		mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -115,6 +114,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 	}
 
 	void replaceView(int viewNum) {
+
+		if(viewNum <= 1){
+			prevButton.setEnabled(false);
+			nextButton.setEnabled(true);
+		}else if(viewNum >=2){
+			prevButton.setEnabled(true);
+			nextButton.setEnabled(false);
+		}else{
+			prevButton.setEnabled(true);
+			nextButton.setEnabled(true);
+		}
+
 		View C = findViewById(R.id.topLinearLayout);
 		ViewGroup parent = (ViewGroup) C.getParent();
 		int index = parent.indexOfChild(C);
@@ -151,7 +162,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 								LatLng destination = new LatLng(latitude, longitude);
 								targetLoc = destination;
-								targetLocMarker = mMap.addMarker(new MarkerOptions().position(destination).title("Your Destination"));
+								if(targetLocMarker == null) {
+									targetLocMarker = mMap.addMarker(new MarkerOptions().position(destination).title("Your Destination"));
+								}else{
+									targetLocMarker.setPosition(targetLoc);
+								}
 								mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(destination, 15));
 							} else {
 								//server error
@@ -215,8 +230,44 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 								spinner.setBackgroundColor(getResources().getColor(R.color.black));
 								spinner.setSelection(0);
 
+								spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+									@Override
+									public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+										try {
 
-								
+											Log.i("transitStopID", transitStopID[position]);
+											ServerResponse response = new ServerCaller().execute("/stop_location?stop_code=" + transitStopID[position]).get();
+
+											Log.i("resp", response.getMessage());
+											if(response.getRespCode().equals("0")){
+												//status is OK
+												//get the location
+												double latitude = Double.parseDouble(response.getData().getString(0));
+												double longitude = Double.parseDouble(response.getData().getString(1));
+
+												LatLng destination = new LatLng(latitude, longitude);
+												targetLoc = destination;
+												if(targetLocMarker == null) {
+													targetLocMarker = mMap.addMarker(new MarkerOptions().position(destination).title("Your Destination"));
+												}else{
+													targetLocMarker.setPosition(targetLoc);
+												}
+												mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(destination, 15));
+											}
+										} catch (InterruptedException e) {
+											e.printStackTrace();
+										} catch (ExecutionException e) {
+											e.printStackTrace();
+										} catch (JSONException e) {
+											e.printStackTrace();
+										}
+									}
+
+									@Override
+									public void onNothingSelected(AdapterView<?> parent) {
+
+									}
+								});
 							} else {
 								//server error
 							}

@@ -8,13 +8,26 @@
               android:orientation="vertical"
               android:weightSum="1">
 
+    <TextView
+        android:id="@+id/textView4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:fontFamily="monospace"
+        android:paddingBottom="15dp"
+        android:paddingTop="15dp"
+        android:text="By Route"
+        android:textColor="@color/black"
+        android:textSize="10pt"/>
+
     <EditText
         android:id="@+id/editTextRouteInput"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Route #"
         android:textColor="@color/black"
-        android:textColorHint="@color/grey"/>
+        android:textColorHint="@color/grey"
+        android:textSize="12pt"/>
 
     <Spinner
         android:id="@+id/spinner"

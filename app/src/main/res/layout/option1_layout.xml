@@ -4,9 +4,10 @@
               android:layout_height="wrap_content"
               android:id="@+id/topLinearLayout"
               android:alpha="1.0"
-              android:background="@color/white"
+              android:background="@android:color/background_light"
               android:orientation="vertical"
-              android:weightSum="1">
+              android:weightSum="1"
+              android:padding="10dp">
     <TextView
         android:id="@+id/textView2"
         android:layout_width="match_parent"
@@ -15,17 +16,20 @@
         android:fontFamily="monospace"
         android:paddingBottom="15dp"
         android:paddingTop="15dp"
-        android:text="Stop:"
+        android:text="Destination Stop Number"
         android:textColor="@color/black"
-        android:textSize="16pt"/>
+        android:textSize="10pt"
+        android:paddingLeft="10dp"
+        android:focusable="false"/>
 
     <EditText
         android:id="@+id/editTextLocInput"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="enter in stuff"
+        android:hint="Stop #"
         android:textColor="@color/black"
-        android:textColorHint="@color/grey"/>
+        android:textSize="10pt"
+        android:paddingLeft="10dp"/>
 
     <TextView
         android:id="@+id/textView3"
@@ -33,5 +37,7 @@
         android:layout_height="wrap_content"
         android:text="Enter where you&apos;d like to stop"
         android:textAppearance="?android:attr/textAppearanceSmall"
-        android:textColor="@color/black"/>
+        android:textColor="@color/black"
+        android:textSize="8pt"
+        android:paddingLeft="10dp"/>
 </LinearLayout>
