@@ -2,6 +2,7 @@ package com.mms.busstopreminder;
 
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.EditText;
@@ -11,9 +12,16 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ConcurrentModificationException;
+import java.util.concurrent.ExecutionException;
+
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, View.OnKeyListener {
 
 	private GoogleMap mMap;
 
@@ -29,20 +37,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 		mapFragment.getMapAsync(this);
 
 		etLocInput = (EditText) findViewById(R.id.editTextLocInput);
-		etLocInput.setOnKeyListener(new View.OnKeyListener() {
-			@Override
-			public boolean onKey(View v, int keyCode, KeyEvent event) {
-				// If the event is a key-down event on the "enter" button
-				if ((event.getAction() == KeyEvent.ACTION_DOWN) &&
-						(keyCode == KeyEvent.KEYCODE_ENTER)) {
-					// Perform action on key press
-					// when user presses enter on etLocInput
+		etLocInput.setOnKeyListener(this);
 
-					return true;
-				}
-				return false;
-			}
-		});
 	}
 
 
@@ -60,8 +56,49 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 		mMap = googleMap;
 
 		// Add a marker in Sydney and move the camera
-		LatLng sydney = new LatLng(-34, 151);
-		mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-		mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+		LatLng toronto = new LatLng(43.6532, -79.3832);
+		mMap.addMarker(new MarkerOptions().position(toronto).title("Marker in toronto"));
+		mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(toronto, 10));
+	}
+
+	@Override
+	public boolean onKey(View v, int keyCode, KeyEvent event) {
+		// If the event is a key-down event on the "enter" button
+		if ((event.getAction() == KeyEvent.ACTION_DOWN) &&
+				(keyCode == KeyEvent.KEYCODE_ENTER)) {
+			// Perform action on key press
+			// when user presses enter on etLocInput
+			try {
+
+				String input = etLocInput.getText().toString();
+				ServerResponse response = new ServerCaller().execute(input).get();
+
+			/*
+			Log.i("resp code", response.getRespCode());
+			Log.i("resp data", response.getData());
+			Log.i("resp message", response.getMessage());*/
+
+				if (response.getRespCode().equals("0")) {
+					//status is OK
+					//get the location
+					double latitude = Double.parseDouble(response.getData().getString(0));
+					double longitude = Double.parseDouble(response.getData().getString(1));
+
+					LatLng destination = new LatLng(latitude, longitude);
+					mMap.addMarker(new MarkerOptions().position(destination).title("Your Destination"));
+					mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(destination, 15));
+				} else {
+					//server error
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				e.printStackTrace();
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+			return true;
+		}
+		return false;
 	}
 }

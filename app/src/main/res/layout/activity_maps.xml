@@ -22,11 +22,14 @@
             android:id="@+id/textView2"
             android:layout_gravity="center_horizontal"
             android:paddingTop="15dp"
+            android:textColor="@color/black"
             android:paddingBottom="15dp"/>
 
         <EditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColorHint="@color/grey"
+            android:textColor="@color/black"
             android:id="@+id/editTextLocInput"
             android:hint="enter in stuff"/>
 
@@ -34,7 +37,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceSmall"
-            android:hint="Enter where you&apos;d like to stop"
+            android:text="Enter where you&apos;d like to stop"
+            android:textColor="@color/black"
             android:id="@+id/textView3"/>
     </LinearLayout>
 </fragment>
